@@ -17,6 +17,8 @@ Die App ist **produktiv im Einsatz**. In der Datenbank liegen Profile, Stimmen u
 - Der Nutzer führt Migrationen ggf. selbst im Supabase SQL Editor aus. Danach **lesend verifizieren**: Zeilenzahlen unverändert, Änderung aktiv.
 - `create or replace function` behält Rechte; neue Funktionen brauchen `revoke … from public, anon` und `grant execute … to authenticated`.
 
+**Vorher/nachher prüfen:** `tools/visual-check/` (siehe README dort) rendert alle Seiten mit nachgebildetem Supabase-Client (keine Produktion) und vergleicht Pixel, Styles, Abfragen und Weiterleitungen. Für Refactorings muss alles «GLEICH» sein; beim Design liefert es die Vorher/Nachher-Screenshots.
+
 **Lokal testen:** `config.js` zeigt auf die **Produktiv-Datenbank**. Lokal nur lesend testen (Seiten ansehen, Statistiken). **Keine** Test-Stimmen, Ratings, Registrierungen oder Admin-Aktionen gegen Produktion. Für schreibende Tests zuerst ein separates Supabase-Testprojekt vorschlagen.
 
 ## Arbeitsweise
