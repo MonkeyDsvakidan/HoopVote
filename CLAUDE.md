@@ -31,7 +31,7 @@ Die App ist **produktiv im Einsatz**. In der Datenbank liegen Profile, Stimmen u
 - **Client:** `config.js` (URL + Publishable Key, darf öffentlich sein), `app.js` (gemeinsame Helfer, `guard()`), Seitenlogik inline in den HTML-Dateien.
 - **Sicherheitsmodell:** RLS auf allen Tabellen, Client liest nur über RLS-Policies, **alle Schreibzugriffe über `SECURITY DEFINER`-RPCs** mit eigener Rechteprüfung und `search_path=public`. `ballot_receipts`, `anonymous_votes`, `skill_ratings` sind für Clients komplett gesperrt. Die Supabase-Advisor-Warnungen «authenticated can execute SECURITY DEFINER» sind deshalb erwartet.
 - **Profilbilder:** öffentlicher Bucket `avatars`, Pfad `<auth.uid()>/<uuid>.<jpg|jpeg|png|webp|heic|heif|gif>`, geprüft durch `is_valid_avatar_path()`. Bucket-Limit 10 MB, nur Bildformate. Im HTML immer `esc(avatarUrl(...))` verwenden.
-- **`schema.sql`** entspricht exakt der Live-DB (Stand nach Migration 02, per Fingerabdruck verglichen). Nach jeder Migration nachführen.
+- **`schema.sql`** entspricht exakt der Live-DB (Stand nach Migration 03, per Fingerabdruck verglichen). Nach jeder Migration nachführen.
 - **MusicBattle** ist ein eigenes Git- und Supabase-Projekt. Nicht anfassen. Die zwei versehentlich hier angelegten `mb_*`-Funktionen wurden mit Migration 02 entfernt.
 - **Migrationen über den Supabase-Zugang** (`apply_migration`) liefen in Claude-Sitzungen mehrfach in einen Timeout, ohne etwas zu ändern. Lesen funktioniert. Migrationen deshalb vom Nutzer im SQL Editor ausführen lassen und danach lesend prüfen.
 
@@ -42,7 +42,8 @@ Die App ist **produktiv im Einsatz**. In der Datenbank liegen Profile, Stimmen u
 - ✅ Migration `20261005120000_avatar_security.sql` ausgeführt und verifiziert (XSS über `avatar_path` geschlossen, Bucket-Limits).
 - ✅ Frontend-Fix (PR #1, gemerged): Bild-URLs werden kodiert und escaped.
 - ✅ `schema.sql` mit Live-DB abgeglichen (Roadmap 1).
-- ⏳ Migration 03 `20261005140000_join_team_name_rules.sql` (Roadmap 3) liegt fertig auf Branch `claude/hoopvote-join-team-rules`, Backup gemacht, **noch nicht ausgeführt** (wartet auf den Nutzer). Danach `schema.sql` nachführen.
+- ✅ Migration 03 `20261005140000_join_team_name_rules.sql` vom Nutzer ausgeführt und verifiziert: `join_team` prüft Namen wie `update_my_profile` (deutsche Meldungen), Zeilenzahlen unverändert. Backup davor beim Nutzer.
+- ✅ Profilbilder werden vor dem Upload verkleinert (PR #5, gemerged).
 - ✅ Migration `20261005130000_fix_rotate_invite_remove_mb.sql` vom Nutzer ausgeführt und verifiziert: «Einladungslink erneuern» repariert (`extensions.gen_random_bytes`), `mb_*`-Funktionen entfernt, Zeilenzahlen unverändert. Backup davor beim Nutzer.
 
 ## Roadmap (in dieser Reihenfolge)
@@ -50,8 +51,8 @@ Die App ist **produktiv im Einsatz**. In der Datenbank liegen Profile, Stimmen u
 1. ✅ **`schema.sql` mit der Live-DB abgleichen.** Schema aus der Live-Datenbank neu erzeugen, damit das Repo wieder stimmt. Die zwei MusicBattle-Funktionen entfernen (vorher mit dem Nutzer bestätigen). README-Pfad korrigieren (`schema.sql` liegt im Root, nicht unter `supabase/`).
 1b. ✅ **`admin_rotate_invite` reparieren** und die zwei `mb_*`-Funktionen aus der Live-DB entfernen (Migration 02).
 2. **Schutz vor geleakten Passwörtern** in Supabase Authentication einschalten. Macht der Nutzer selbst. Vom Nutzer vorerst zurückgestellt (nur in kostenpflichtigen Plänen).
-3. **Registrierung vereinheitlichen.** `join_team` soll dieselben Regeln wie `update_my_profile` prüfen (Name 2–10 Zeichen, eindeutig im Team). Bestehende Namen nicht anfassen.
-4. **Profilbilder beim Upload verkleinern.** `uploadAvatar()` in `app.js` skaliert vor dem Upload (kürzere Seite 400 px, JPEG 0.85, ca. 40–90 KB); kann der Browser das Bild nicht lesen (z. B. HEIC), wird wie bisher das Original hochgeladen. Bestehende Bilder unverändert.
+3. ✅ **Registrierung vereinheitlichen.** `join_team` soll dieselben Regeln wie `update_my_profile` prüfen (Name 2–10 Zeichen, eindeutig im Team). Bestehende Namen nicht anfassen.
+4. ✅ **Profilbilder beim Upload verkleinern.** `uploadAvatar()` in `app.js` skaliert vor dem Upload (kürzere Seite 400 px, JPEG 0.85, ca. 40–90 KB); kann der Browser das Bild nicht lesen (z. B. HEIC), wird wie bisher das Original hochgeladen. Bestehende Bilder unverändert.
 5. **Code aufräumen und optimieren.** Inline-Skripte aus den HTML-Dateien in lesbare JS-Dateien pro Seite auslagern (`js/vote.js`, …), gemeinsame Helfer in `app.js` bündeln, Duplikate entfernen, Inline-Styles nach `styles.css`. **Kein geändertes Verhalten.** Parallele statt nacheinander laufende Datenabfragen, wo möglich. Jede Seite vorher/nachher lesend gegen Produktion prüfen.
 6. **Modernes Design.** Erst nach Schritt 5. Vorher mit dem Nutzer Stil und Vorbilder klären. Sauberes Design-System in `styles.css` (Farb-, Abstands- und Schrift-Variablen), moderne Typografie, mobile-first (die App wird v. a. auf dem Handy genutzt), einheitliche Komponenten (Karten, Buttons, Tabs, Ranglisten), gute Lesbarkeit und Kontraste, sinnvolle Animationen. Abläufe und Texte bleiben gleich. Vorher/nachher-Screenshots zeigen.
 7. **Spieler deaktivieren.** Klären, ob es nötig ist: Inaktive Spieler blockieren sonst den Saisonabschluss, weil alle Ratings vollständig sein müssen. Lösung als neuer Status (z. B. `inactive`) per additiver Migration.
