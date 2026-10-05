@@ -45,7 +45,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (rows?.length) {
       const x = rows[0],
         av = x.avatar_path
-          ? `<img src="${esc(avatarUrl(x.avatar_path))}" alt="" style="width:42px;height:42px;object-fit:cover;border-radius:50%">`
+          ? `<img class="avatar-img-42" src="${esc(avatarUrl(x.avatar_path))}" alt="">`
           : `<div class="avatar">${initials(x.display_name)}</div>`;
       $('#heroLeader').innerHTML =
         `${av}<div><strong>${esc(x.display_name)}</strong><div class="muted small">${x.first_places || 0}× Platz 1</div></div><div class="score">${x.points} P</div>`;
@@ -91,7 +91,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             ? labels
                 .map(([k, l]) => `<div class="skill-chip"><span>${l}</span><b>${x[k] ?? '–'}</b></div>`)
                 .join('')
-            : `<div class="notice" style="margin-top:8px">Noch nicht sichtbar – mindestens 3 Bewertungen erforderlich (${x.rating_count}/3).</div>`;
+            : `<div class="notice mt-8">Noch nicht sichtbar – mindestens 3 Bewertungen erforderlich (${x.rating_count}/3).</div>`;
           return `<div class="player-rating-card"><div class="player-head compact"><div class="avatar">${initials(x.display_name)}</div><div><strong>${esc(x.display_name)}</strong><div class="muted small">${x.rating_count} Bewertungen</div></div></div><div class="skill-chips">${skills}</div></div>`;
         })
         .join('') || '<p class="muted">Noch keine Ratings vorhanden.</p>';

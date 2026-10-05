@@ -34,7 +34,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       (data || [])
         .map(
           x =>
-            `<div class="admin-row"><div class="avatar">${initials(x.display_name)}</div><div><strong>${esc(x.display_name)}</strong><div class="muted small">Registriert ${HoopVote.fmtDate(x.created_at)}</div></div><div class="actions" style="margin:0"><button class="btn primary approve" data-id="${x.id}">Freigeben</button><button class="btn secondary reject" data-id="${x.id}">Ablehnen</button></div></div>`,
+            `<div class="admin-row"><div class="avatar">${initials(x.display_name)}</div><div><strong>${esc(x.display_name)}</strong><div class="muted small">Registriert ${HoopVote.fmtDate(x.created_at)}</div></div><div class="actions m-0"><button class="btn primary approve" data-id="${x.id}">Freigeben</button><button class="btn secondary reject" data-id="${x.id}">Ablehnen</button></div></div>`,
         )
         .join('') || '<p class="muted">Keine offenen Registrierungen.</p>';
     document.querySelectorAll('.approve').forEach(b => (b.onclick = () => setProfile(b.dataset.id, true)));
@@ -72,7 +72,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           ? `<button class="btn secondary closeSeason" data-id="${s.id}" data-stage="${s.rating_stage}">${s.rating_stage === 'final' ? 'Saison definitiv abschliessen' : 'Abschlussratings starten'}</button>`
           : '';
       rows.push(
-        `<div class="leader"><div><strong>${esc(s.name)}</strong><div class="muted small">${status}${rating}</div></div><div class="actions" style="margin:0">${button}</div></div>`,
+        `<div class="leader"><div><strong>${esc(s.name)}</strong><div class="muted small">${status}${rating}</div></div><div class="actions m-0">${button}</div></div>`,
       );
     }
     $('#seasonList').innerHTML = rows.join('') || '<p class="muted">Noch keine Saison angelegt.</p>';
@@ -113,7 +113,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       (data || [])
         .map(
           s =>
-            `<div class="leader"><div><strong>${esc(s.title)}</strong><div class="muted small">${s.status} · Start ${HoopVote.fmtDate(s.started_at)} · Ende ${HoopVote.fmtDate(s.ends_at)}</div></div><div class="actions" style="margin:0">${s.status === 'open' ? `<button class="btn danger cancelSession" data-id="${s.id}">Abbrechen</button>` : ''}</div></div>`,
+            `<div class="leader"><div><strong>${esc(s.title)}</strong><div class="muted small">${s.status} · Start ${HoopVote.fmtDate(s.started_at)} · Ende ${HoopVote.fmtDate(s.ends_at)}</div></div><div class="actions m-0">${s.status === 'open' ? `<button class="btn danger cancelSession" data-id="${s.id}">Abbrechen</button>` : ''}</div></div>`,
         )
         .join('') || '<p class="muted">Noch keine Sessions.</p>';
     document.querySelectorAll('.cancelSession').forEach(

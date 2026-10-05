@@ -56,7 +56,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         const r = sel.indexOf(x.profile_id) + 1,
           a = r > 0;
         const av = x.avatar_path
-          ? `<img src="${esc(avatarUrl(x.avatar_path))}" alt="" style="width:34px;height:34px;object-fit:cover;border-radius:50%">`
+          ? `<img class="avatar-img-34" src="${esc(avatarUrl(x.avatar_path))}" alt="">`
           : `<div class="avatar">${initials(x.display_name)}</div>`;
         return `<div class="rank-row" data-player="${x.profile_id}"><div class="rank-badge">${a ? r : '–'}</div><div class="player">${av}<div><strong>${esc(x.display_name)}</strong><div class="muted small">${a ? [3, 2, 1][r - 1] + ' Punkte' : 'Antippen zum Rangieren'}</div></div></div><span class="muted">${a ? '✓' : '+'}</span></div>`;
       })
