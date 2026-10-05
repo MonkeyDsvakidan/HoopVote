@@ -1,0 +1,13 @@
+{
+  "name": "hoopvote-visual-check",
+  "private": true,
+  "description": "Entwickler-Werkzeug: vergleicht HoopVote-Seiten vorher/nachher mit nachgebildetem Supabase-Client. Wird von der App nicht benutzt.",
+  "scripts": {
+    "compare": "node compare.js",
+    "scenarios": "node scenarios.js",
+    "timing": "node timing.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}
