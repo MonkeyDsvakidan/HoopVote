@@ -1,7 +1,7 @@
 window.addEventListener('DOMContentLoaded', async () => {
   const p = await HoopVote.guard();
   HoopVote.wireSignOut();
-  const { sb, $, esc, avatarInitials, avatarHtml } = HoopVote;
+  const { sb, $, esc, avatarHtml } = HoopVote;
   const { data: seasons } = await sb
     .from('seasons')
     .select('id,name,status,starts_at,ends_at')
@@ -49,7 +49,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       (rows || [])
         .map(
           (x, i) =>
-            `<div class="leader"><div class="pos">#${i + 1}</div>${avatarInitials(x.display_name)}<div><strong>${esc(x.display_name)}</strong><div class="muted small">${x.first_places || 0}× Platz 1</div></div><div class="score">${x.points} P</div></div>`,
+            `<div class="leader"><div class="pos${i < 3 ? ` top-${i + 1}` : ''}">#${i + 1}</div>${avatarHtml(x.display_name, x.avatar_path, 'avatar-img-38')}<div><strong>${esc(x.display_name)}</strong><div class="muted small">${x.first_places || 0}× Platz 1</div></div><div class="score">${x.points} P</div></div>`,
         )
         .join('') || '<p class="muted">Noch keine abgeschlossenen Sessions.</p>';
     const best = {};
@@ -83,7 +83,7 @@ window.addEventListener('DOMContentLoaded', async () => {
                 .map(([k, l]) => `<div class="skill-chip"><span>${l}</span><b>${x[k] ?? '–'}</b></div>`)
                 .join('')
             : `<div class="notice mt-8">Noch nicht sichtbar – mindestens 3 Bewertungen erforderlich (${x.rating_count}/3).</div>`;
-          return `<div class="player-rating-card"><div class="player-head compact">${avatarInitials(x.display_name)}<div><strong>${esc(x.display_name)}</strong><div class="muted small">${x.rating_count} Bewertungen</div></div></div><div class="skill-chips">${skills}</div></div>`;
+          return `<div class="player-rating-card"><div class="player-head compact">${avatarHtml(x.display_name, x.avatar_path, 'avatar-img-38')}<div><strong>${esc(x.display_name)}</strong><div class="muted small">${x.rating_count} Bewertungen</div></div></div><div class="skill-chips">${skills}</div></div>`;
         })
         .join('') || '<p class="muted">Noch keine Ratings vorhanden.</p>';
     if (open?.length) {

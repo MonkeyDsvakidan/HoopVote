@@ -1,7 +1,7 @@
 window.addEventListener('DOMContentLoaded', async () => {
   const p = await HoopVote.guard({ admin: true });
   HoopVote.wireSignOut();
-  const { sb, $, esc, avatarInitials } = HoopVote;
+  const { sb, $, esc, avatarHtml } = HoopVote;
   async function invite() {
     const { data, error } = await sb.rpc('admin_get_invite');
     if (error) throw error;
@@ -19,7 +19,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     $('#attendance').innerHTML = (data || [])
       .map(
         x =>
-          `<div class="admin-row">${avatarInitials(x.display_name)}<div><strong>${esc(x.display_name)}</strong><div class="muted small">Aktiver Spieler</div></div><label class="check"><input type="checkbox" class="attendee" value="${x.id}"> Anwesend</label></div>`,
+          `<div class="admin-row">${avatarHtml(x.display_name, x.avatar_path, 'avatar-img-38')}<div><strong>${esc(x.display_name)}</strong><div class="muted small">Aktiver Spieler</div></div><label class="check"><input type="checkbox" class="attendee" value="${x.id}"> Anwesend</label></div>`,
       )
       .join('');
   }
@@ -34,7 +34,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       (data || [])
         .map(
           x =>
-            `<div class="admin-row">${avatarInitials(x.display_name)}<div><strong>${esc(x.display_name)}</strong><div class="muted small">Registriert ${HoopVote.fmtDate(x.created_at)}</div></div><div class="actions m-0"><button class="btn primary approve" data-id="${x.id}">Freigeben</button><button class="btn secondary reject" data-id="${x.id}">Ablehnen</button></div></div>`,
+            `<div class="admin-row">${avatarHtml(x.display_name, x.avatar_path, 'avatar-img-38')}<div><strong>${esc(x.display_name)}</strong><div class="muted small">Registriert ${HoopVote.fmtDate(x.created_at)}</div></div><div class="actions m-0"><button class="btn primary approve" data-id="${x.id}">Freigeben</button><button class="btn secondary reject" data-id="${x.id}">Ablehnen</button></div></div>`,
         )
         .join('') || '<p class="muted">Keine offenen Registrierungen.</p>';
     document.querySelectorAll('.approve').forEach(b => (b.onclick = () => setProfile(b.dataset.id, true)));
@@ -101,6 +101,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         }),
     );
   }
+  const sessionStatus = { open: 'offen', closed: 'abgeschlossen', cancelled: 'abgebrochen' };
   async function sessions() {
     await sb.rpc('open_session_progress');
     const { data } = await sb
@@ -113,7 +114,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       (data || [])
         .map(
           s =>
-            `<div class="leader"><div><strong>${esc(s.title)}</strong><div class="muted small">${s.status} · Start ${HoopVote.fmtDate(s.started_at)} · Ende ${HoopVote.fmtDate(s.ends_at)}</div></div><div class="actions m-0">${s.status === 'open' ? `<button class="btn danger cancelSession" data-id="${s.id}">Abbrechen</button>` : ''}</div></div>`,
+            `<div class="leader"><div><strong>${esc(s.title)}</strong><div class="muted small">${sessionStatus[s.status] || s.status} · Start ${HoopVote.fmtDate(s.started_at)} · Ende ${HoopVote.fmtDate(s.ends_at)}</div></div><div class="actions m-0">${s.status === 'open' ? `<button class="btn danger cancelSession" data-id="${s.id}">Abbrechen</button>` : ''}</div></div>`,
         )
         .join('') || '<p class="muted">Noch keine Sessions.</p>';
     document.querySelectorAll('.cancelSession').forEach(

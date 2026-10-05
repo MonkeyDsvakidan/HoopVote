@@ -451,6 +451,16 @@ button:disabled {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+/* Podest in der Rangliste: Gold, Silber, Bronze */
+.pos.top-1 {
+  color: #ffd60a;
+}
+.pos.top-2 {
+  color: #d1d1d6;
+}
+.pos.top-3 {
+  color: #e0a46a;
+}
 .score {
   margin-left: auto;
   font-weight: 700;
@@ -712,6 +722,7 @@ button:disabled {
   margin: 16px 0;
 }
 .avatar-img-34,
+.avatar-img-38,
 .avatar-img-42 {
   flex: none;
   object-fit: cover;
@@ -721,6 +732,10 @@ button:disabled {
 .avatar-img-34 {
   width: 34px;
   height: 34px;
+}
+.avatar-img-38 {
+  width: 38px;
+  height: 38px;
 }
 .avatar-img-42 {
   width: 42px;
