@@ -31,8 +31,9 @@ Die App ist **produktiv im Einsatz**. In der Datenbank liegen Profile, Stimmen u
 - **Client:** `config.js` (URL + Publishable Key, darf öffentlich sein), `app.js` (gemeinsame Helfer, `guard()`), Seitenlogik inline in den HTML-Dateien.
 - **Sicherheitsmodell:** RLS auf allen Tabellen, Client liest nur über RLS-Policies, **alle Schreibzugriffe über `SECURITY DEFINER`-RPCs** mit eigener Rechteprüfung und `search_path=public`. `ballot_receipts`, `anonymous_votes`, `skill_ratings` sind für Clients komplett gesperrt. Die Supabase-Advisor-Warnungen «authenticated can execute SECURITY DEFINER» sind deshalb erwartet.
 - **Profilbilder:** öffentlicher Bucket `avatars`, Pfad `<auth.uid()>/<uuid>.<jpg|jpeg|png|webp|heic|heif|gif>`, geprüft durch `is_valid_avatar_path()`. Bucket-Limit 10 MB, nur Bildformate. Im HTML immer `esc(avatarUrl(...))` verwenden.
-- **`schema.sql`** entspricht seit 5. Oktober 2026 exakt der Live-DB (209 Objekte inkl. Funktionsinhalt und Rechte per Fingerabdruck verglichen). Nach jeder Migration nachführen.
-- **Fremdkörper:** `mb_is_room_member`, `mb_is_room_player` gehören zu MusicBattle (eigenes Git- und Supabase-Projekt) und wurden versehentlich hier angelegt. Nicht mehr in `schema.sql`, in der Live-DB noch vorhanden (ungenutzt). MusicBattle selbst nicht anfassen.
+- **`schema.sql`** entspricht exakt der Live-DB (Stand nach Migration 02, per Fingerabdruck verglichen). Nach jeder Migration nachführen.
+- **MusicBattle** ist ein eigenes Git- und Supabase-Projekt. Nicht anfassen. Die zwei versehentlich hier angelegten `mb_*`-Funktionen wurden mit Migration 02 entfernt.
+- **Migrationen über den Supabase-Zugang** (`apply_migration`) liefen in Claude-Sitzungen mehrfach in einen Timeout, ohne etwas zu ändern. Lesen funktioniert. Migrationen deshalb vom Nutzer im SQL Editor ausführen lassen und danach lesend prüfen.
 
 ## Stand (5. Oktober 2026)
 
@@ -41,12 +42,12 @@ Die App ist **produktiv im Einsatz**. In der Datenbank liegen Profile, Stimmen u
 - ✅ Migration `20261005120000_avatar_security.sql` ausgeführt und verifiziert (XSS über `avatar_path` geschlossen, Bucket-Limits).
 - ✅ Frontend-Fix (PR #1, gemerged): Bild-URLs werden kodiert und escaped.
 - ✅ `schema.sql` mit Live-DB abgeglichen (Roadmap 1).
-- ⚠️ Gefunden: `admin_rotate_invite` («Einladungslink erneuern») schlägt fehl, weil `gen_random_bytes` im Schema `extensions` liegt und mit `search_path=public` nicht gefunden wird.
+- ✅ Migration `20261005130000_fix_rotate_invite_remove_mb.sql` vom Nutzer ausgeführt und verifiziert: «Einladungslink erneuern» repariert (`extensions.gen_random_bytes`), `mb_*`-Funktionen entfernt, Zeilenzahlen unverändert. Backup davor beim Nutzer.
 
 ## Roadmap (in dieser Reihenfolge)
 
 1. ✅ **`schema.sql` mit der Live-DB abgleichen.** Schema aus der Live-Datenbank neu erzeugen, damit das Repo wieder stimmt. Die zwei MusicBattle-Funktionen entfernen (vorher mit dem Nutzer bestätigen). README-Pfad korrigieren (`schema.sql` liegt im Root, nicht unter `supabase/`).
-1b. **`admin_rotate_invite` reparieren** (Migration: `extensions.gen_random_bytes(18)`), optional zusammen mit dem Entfernen der zwei `mb_*`-Funktionen aus der Live-DB – jeweils nur nach OK des Nutzers.
+1b. ✅ **`admin_rotate_invite` reparieren** und die zwei `mb_*`-Funktionen aus der Live-DB entfernen (Migration 02).
 2. **Schutz vor geleakten Passwörtern** in Supabase Authentication einschalten. Macht der Nutzer selbst, nur daran erinnern.
 3. **Registrierung vereinheitlichen.** `join_team` soll dieselben Regeln wie `update_my_profile` prüfen (Name 2–10 Zeichen, eindeutig im Team). Bestehende Namen nicht anfassen.
 4. **Profilbilder beim Upload verkleinern.** Im Browser vor dem Upload auf ca. 400×400 px (JPEG/WebP) skalieren. Aktuell bis 7.5 MB für 34–42 px grosse Avatare.
