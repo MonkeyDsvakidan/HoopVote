@@ -6,8 +6,9 @@
 -- ⚠️  NIE AUF DER PRODUKTIV-DATENBANK AUSFÜHREN.
 --
 -- Diese Datei beschreibt den Stand der Live-Datenbank (Projekt «HoopVote»)
--- vom 5. Oktober 2026, inklusive Migration
--- supabase/migrations/20261005120000_avatar_security.sql.
+-- vom 5. Oktober 2026, inklusive Migrationen
+-- supabase/migrations/20261005120000_avatar_security.sql und
+-- supabase/migrations/20261005130000_fix_rotate_invite_remove_mb.sql.
 -- Änderungen an der Live-Datenbank nur als neue Migration in
 -- supabase/migrations/ – und diese Datei danach nachführen.
 --
@@ -267,15 +268,13 @@ begin
   return query select t.invite_token from public.teams t where t.id=v_team;
 end$$;
 
--- ⚠️ Bekannter Fehler (Stand Live-DB): gen_random_bytes liegt im Schema «extensions»,
--- ist mit search_path=public aber nicht auffindbar → «Einladungslink erneuern» schlägt fehl.
--- Korrektur folgt als eigene Migration (extensions.gen_random_bytes).
+-- gen_random_bytes mit Schema, weil pgcrypto in «extensions» liegt (Migration 02)
 create or replace function public.admin_rotate_invite()
 returns text language plpgsql security definer set search_path=public as $$
 declare v_team uuid:=public.my_team_id(); v_token text;
 begin
   if not public.is_admin(v_team) then raise exception 'Keine Admin-Rechte'; end if;
-  v_token:=encode(gen_random_bytes(18),'hex');
+  v_token:=encode(extensions.gen_random_bytes(18),'hex');
   update public.teams set invite_token=v_token where id=v_team;
   return v_token;
 end$$;
