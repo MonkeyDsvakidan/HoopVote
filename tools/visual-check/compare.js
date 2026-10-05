@@ -4,7 +4,7 @@ const [A,B]=[process.argv[2],process.argv[3]]; const out=process.argv[4]||'.'; c
 const serve=async dir=>{const s=spawn('python3',['-m','http.server','8100'],{cwd:dir,stdio:'ignore'});await new Promise(r=>setTimeout(r,800));return s};
 const PAGES=['index','vote','stats','ratings','settings','admin']; const W=[[390,844],[1280,900]];
 const png1x1=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==','base64');
-async function snap(b,port,page,[w,h]){const ctx=await b.newContext({viewport:{width:w,height:h},deviceScaleFactor:1});
+async function snap(b,port,page,[w,h]){const ctx=await b.newContext({viewport:{width:w,height:h},deviceScaleFactor:1,reducedMotion:'reduce'});
  await ctx.route('**/*',r=>{const u=new URL(r.request().url());if(u.hostname==='localhost')return r.continue();if(u.hostname==='cdn.jsdelivr.net')return r.fulfill({path:__dirname+'/mock-supabase.js',contentType:'application/javascript'});if(r.request().resourceType()==='image')return r.fulfill({body:png1x1,contentType:'image/png'});return r.abort()});
  const p=await ctx.newPage(); await p.clock.install({time:new Date('2026-10-05T12:00:00Z')}); await p.clock.pauseAt(new Date('2026-10-05T12:00:00Z'));
  const errs=[];p.on('pageerror',e=>errs.push(e.message));
