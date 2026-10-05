@@ -1,7 +1,7 @@
 window.addEventListener('DOMContentLoaded', async () => {
   const p = await HoopVote.guard();
   HoopVote.wireSignOut();
-  const { sb, $, esc, initials, avatarUrl } = HoopVote;
+  const { sb, $, esc, avatarInitials, avatarHtml } = HoopVote;
   const { data: seasons } = await sb
     .from('seasons')
     .select('id,name,status,starts_at,ends_at')
@@ -22,19 +22,16 @@ window.addEventListener('DOMContentLoaded', async () => {
       scope === 'month'
         ? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
         : null;
-    const { data: rows, error } = await sb.rpc('leaderboard', {
-      p_season_id: seasonId,
-      p_month_start: monthStart,
-    });
+    const range = { p_season_id: seasonId, p_month_start: monthStart };
+    const [{ data: rows, error }, { data: cats }, { data: summary }, { data: skillRows }, { data: open }] =
+      await Promise.all([
+        sb.rpc('leaderboard', range),
+        sb.rpc('category_leaderboard', range),
+        sb.rpc('stats_summary', range),
+        sb.rpc('skill_rating_summary', { p_season_id: seasonId, p_phase: ratingPhase }),
+        sb.rpc('open_session_progress'),
+      ]);
     if (error) throw error;
-    const { data: cats } = await sb.rpc('category_leaderboard', {
-      p_season_id: seasonId,
-      p_month_start: monthStart,
-    });
-    const { data: summary } = await sb.rpc('stats_summary', {
-      p_season_id: seasonId,
-      p_month_start: monthStart,
-    });
     const sum = summary?.[0] || {};
     $('#statSessions').textContent = sum.session_count || 0;
     $('#statParticipation').textContent =
@@ -44,9 +41,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     $('#leaderLabel').textContent = scope === 'month' ? 'Monats-Leader' : 'Saison-Leader';
     if (rows?.length) {
       const x = rows[0],
-        av = x.avatar_path
-          ? `<img class="avatar-img-42" src="${esc(avatarUrl(x.avatar_path))}" alt="">`
-          : `<div class="avatar">${initials(x.display_name)}</div>`;
+        av = avatarHtml(x.display_name, x.avatar_path, 'avatar-img-42');
       $('#heroLeader').innerHTML =
         `${av}<div><strong>${esc(x.display_name)}</strong><div class="muted small">${x.first_places || 0}× Platz 1</div></div><div class="score">${x.points} P</div>`;
     } else $('#heroLeader').innerHTML = '<span class="muted">Noch keine Resultate.</span>';
@@ -54,7 +49,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       (rows || [])
         .map(
           (x, i) =>
-            `<div class="leader"><div class="pos">#${i + 1}</div><div class="avatar">${initials(x.display_name)}</div><div><strong>${esc(x.display_name)}</strong><div class="muted small">${x.first_places || 0}× Platz 1</div></div><div class="score">${x.points} P</div></div>`,
+            `<div class="leader"><div class="pos">#${i + 1}</div>${avatarInitials(x.display_name)}<div><strong>${esc(x.display_name)}</strong><div class="muted small">${x.first_places || 0}× Platz 1</div></div><div class="score">${x.points} P</div></div>`,
         )
         .join('') || '<p class="muted">Noch keine abgeschlossenen Sessions.</p>';
     const best = {};
@@ -68,10 +63,6 @@ window.addEventListener('DOMContentLoaded', async () => {
             `<div class="leader"><div><strong>${esc(x.category_name)}</strong><div class="muted small">${esc(x.display_name)}</div></div><div class="score">${x.points} P</div></div>`,
         )
         .join('') || '<p class="muted">Noch keine Kategorien-Auswertung.</p>';
-    const { data: skillRows } = await sb.rpc('skill_rating_summary', {
-      p_season_id: seasonId,
-      p_phase: ratingPhase,
-    });
     const labels = [
       ['shooting', 'Werfen'],
       ['layups', 'Korbleger'],
@@ -92,39 +83,36 @@ window.addEventListener('DOMContentLoaded', async () => {
                 .map(([k, l]) => `<div class="skill-chip"><span>${l}</span><b>${x[k] ?? '–'}</b></div>`)
                 .join('')
             : `<div class="notice mt-8">Noch nicht sichtbar – mindestens 3 Bewertungen erforderlich (${x.rating_count}/3).</div>`;
-          return `<div class="player-rating-card"><div class="player-head compact"><div class="avatar">${initials(x.display_name)}</div><div><strong>${esc(x.display_name)}</strong><div class="muted small">${x.rating_count} Bewertungen</div></div></div><div class="skill-chips">${skills}</div></div>`;
+          return `<div class="player-rating-card"><div class="player-head compact">${avatarInitials(x.display_name)}<div><strong>${esc(x.display_name)}</strong><div class="muted small">${x.rating_count} Bewertungen</div></div></div><div class="skill-chips">${skills}</div></div>`;
         })
         .join('') || '<p class="muted">Noch keine Ratings vorhanden.</p>';
-    const { data: open } = await sb.rpc('open_session_progress');
     if (open?.length) {
       $('#openNotice').style.display = 'block';
       $('#openNotice').textContent =
         `Offene Session: ${open[0].submitted_count}/${open[0].eligible_count} abgestimmt. Keine Zwischenstände sichtbar.`;
     } else $('#openNotice').style.display = 'none';
   }
+  // Aktiven Tab markieren, den anderen zurücksetzen, neu laden.
+  function switchTab(on, off) {
+    $(on).classList.add('active');
+    $(off).classList.remove('active');
+    load();
+  }
   $('#monthTab').onclick = () => {
     scope = 'month';
-    $('#monthTab').classList.add('active');
-    $('#seasonTab').classList.remove('active');
-    load();
+    switchTab('#monthTab', '#seasonTab');
   };
   $('#seasonTab').onclick = () => {
     scope = 'season';
-    $('#seasonTab').classList.add('active');
-    $('#monthTab').classList.remove('active');
-    load();
+    switchTab('#seasonTab', '#monthTab');
   };
   $('#startRatingTab').onclick = () => {
     ratingPhase = 'start';
-    $('#startRatingTab').classList.add('active');
-    $('#finalRatingTab').classList.remove('active');
-    load();
+    switchTab('#startRatingTab', '#finalRatingTab');
   };
   $('#finalRatingTab').onclick = () => {
     ratingPhase = 'final';
-    $('#finalRatingTab').classList.add('active');
-    $('#startRatingTab').classList.remove('active');
-    load();
+    switchTab('#finalRatingTab', '#startRatingTab');
   };
   $('#seasonSelect').onchange = load;
   load();

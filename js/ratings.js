@@ -1,7 +1,7 @@
 window.addEventListener('DOMContentLoaded', async () => {
   const p = await HoopVote.guard({ skipRatings: true });
   HoopVote.wireSignOut();
-  const { sb, $, esc, initials, avatarUrl } = HoopVote;
+  const { sb, $, esc, avatarUrl } = HoopVote;
   const skills = [
     ['shooting', 'Werfen', 'Distanzwurf, Midrange und Wurfkonstanz'],
     ['layups', 'Korbleger', 'Finishing am Korb und Abschluss unter Druck'],

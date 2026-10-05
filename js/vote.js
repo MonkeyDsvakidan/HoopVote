@@ -1,7 +1,7 @@
 window.addEventListener('DOMContentLoaded', async () => {
   const p = await HoopVote.guard();
   HoopVote.wireSignOut();
-  const { sb, $, $$, esc, initials, avatarUrl } = HoopVote;
+  const { sb, $, $$, esc, avatarHtml } = HoopVote;
   const { data: sessions, error } = await sb.rpc('current_vote_session');
   if (error) throw error;
   if (!sessions?.length) {
@@ -19,13 +19,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     $('#receiptNotice').textContent = 'Du hast für diese Session bereits abgestimmt.';
     $('#submitVote').disabled = true;
   }
-  const { data: cats } = await sb
-    .from('categories')
-    .select('id,name')
-    .eq('team_id', p.team_id)
-    .eq('active', true)
-    .order('sort_order');
-  const { data: candidates } = await sb.rpc('eligible_candidates', { p_session_id: s.id });
+  const [{ data: cats }, { data: candidates }] = await Promise.all([
+    sb.from('categories').select('id,name').eq('team_id', p.team_id).eq('active', true).order('sort_order'),
+    sb.rpc('eligible_candidates', { p_session_id: s.id }),
+  ]);
   let active = 0;
   const selections = Object.fromEntries(cats.map(c => [c.id, []]));
   function drawTabs() {
@@ -55,9 +52,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       .map(x => {
         const r = sel.indexOf(x.profile_id) + 1,
           a = r > 0;
-        const av = x.avatar_path
-          ? `<img class="avatar-img-34" src="${esc(avatarUrl(x.avatar_path))}" alt="">`
-          : `<div class="avatar">${initials(x.display_name)}</div>`;
+        const av = avatarHtml(x.display_name, x.avatar_path, 'avatar-img-34');
         return `<div class="rank-row" data-player="${x.profile_id}"><div class="rank-badge">${a ? r : '–'}</div><div class="player">${av}<div><strong>${esc(x.display_name)}</strong><div class="muted small">${a ? [3, 2, 1][r - 1] + ' Punkte' : 'Antippen zum Rangieren'}</div></div></div><span class="muted">${a ? '✓' : '+'}</span></div>`;
       })
       .join('');

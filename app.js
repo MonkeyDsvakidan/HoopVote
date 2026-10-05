@@ -8,6 +8,9 @@ const esc = (v='') => String(v).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;
 const fmtDate = v => new Intl.DateTimeFormat('de-CH',{dateStyle:'medium',timeStyle:'short'}).format(new Date(v));
 const initials = n => (n||'?').split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
 const avatarUrl = path => path ? `${cfg.supabaseUrl}/storage/v1/object/public/avatars/${String(path).split('/').map(encodeURIComponent).join('/')}` : '';
+// Runder Platzhalter mit Initialen bzw. Profilbild (imgClass = Grössenklasse, z. B. 'avatar-img-34').
+const avatarInitials = name => `<div class="avatar">${initials(name)}</div>`;
+const avatarHtml = (name, path, imgClass) => path ? `<img class="${imgClass}" src="${esc(avatarUrl(path))}" alt="">` : avatarInitials(name);
 
 function showConfigError(){
   document.body.innerHTML = `<div class="app"><section class="card" style="margin-top:60px"><div class="eyebrow">Backend noch nicht verbunden</div><h1>HoopVote ist bereit für Supabase</h1><p class="muted">Trage die Supabase Project URL und den öffentlichen anon key in <code>config.js</code> ein. Danach sind Login, Datenbank und Profilbilder aktiv.</p></section></div>`;
@@ -16,12 +19,15 @@ async function sessionUser(){ if(!sb) return null; const {data}=await sb.auth.ge
 async function profile(){ if(!sb) return null; const {data,error}=await sb.rpc('my_state'); if(error) throw error; return data?.[0]||null; }
 async function guard({admin=false, allowPending=false, skipRatings=false}={}){
   if(!configured){ showConfigError(); throw new Error('not configured'); }
+  // Benutzer, Profil und Rating-Status gleichzeitig abfragen statt nacheinander (spart zwei Wartezeiten).
+  const profileReq=profile(), ratingReq=skipRatings?null:Promise.resolve(sb.rpc('current_rating_status'));
+  profileReq.catch(()=>{}); ratingReq?.catch(()=>{});
   const user=await sessionUser(); if(!user){ location.href=`index.html?next=${encodeURIComponent(location.pathname.split('/').pop())}`; throw new Error('no auth'); }
-  const p=await profile();
+  const p=await profileReq;
   if(!p){ location.href='index.html?onboarding=1'; throw new Error('no profile'); }
   if(!allowPending && p.status!=='approved'){ location.href='index.html?pending=1'; throw new Error('pending'); }
   if(p.status==='approved' && !skipRatings){
-    const {data:ratingStatus,error:ratingError}=await sb.rpc('current_rating_status');
+    const {data:ratingStatus,error:ratingError}=await ratingReq;
     if(ratingError) throw ratingError;
     const rs=ratingStatus?.[0];
     if(rs && Number(rs.missing_count)>0){ location.href='ratings.html'; throw new Error('ratings required'); }
@@ -56,4 +62,4 @@ async function uploadAvatar(file,userId){
   const {error}=await sb.storage.from('avatars').upload(path,small||file,{upsert:false,contentType:small?'image/jpeg':(file.type||'image/jpeg')});
   if(error) throw error; return path;
 }
-window.HoopVote={sb,configured,$,$$,esc,fmtDate,initials,avatarUrl,sessionUser,profile,guard,signOut,wireSignOut,uploadAvatar,showConfigError};
+window.HoopVote={sb,configured,$,$$,esc,fmtDate,initials,avatarUrl,avatarInitials,avatarHtml,sessionUser,profile,guard,signOut,wireSignOut,uploadAvatar,showConfigError};
