@@ -1,7 +1,7 @@
 window.addEventListener('DOMContentLoaded', async () => {
   const p = await HoopVote.guard();
   HoopVote.wireSignOut();
-  const { sb, $, $$, esc, avatarHtml } = HoopVote;
+  const { sb, $, $$, esc, avatarHtml, notify } = HoopVote;
   const { data: sessions, error } = await sb.rpc('current_vote_session');
   if (error) throw error;
   if (!sessions?.length) {
@@ -67,6 +67,18 @@ window.addEventListener('DOMContentLoaded', async () => {
           drawTabs();
           drawRanking();
           updateStatus();
+          // Kategorie gerade vollständig geworden: kurz zeigen, dann zur nächsten offenen Kategorie wechseln.
+          if (idx < 0 && arr.length === 3) {
+            const open = cats.map((x, i) => i).filter(i => selections[cats[i].id].length < 3);
+            const next = open.find(i => i > active) ?? open[0];
+            if (next !== undefined)
+              setTimeout(() => {
+                if (cats[active] !== c) return;
+                active = next;
+                drawTabs();
+                drawRanking();
+              }, 450);
+          }
         }),
     );
   }
@@ -87,7 +99,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     $('#submitVote').disabled = true;
     const { error } = await sb.rpc('cast_ballot', { p_session_id: s.id, p_ballot: ballot });
     if (error) {
-      alert(error.message);
+      notify(error.message);
       updateStatus();
       return;
     }
