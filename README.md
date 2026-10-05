@@ -16,7 +16,7 @@ HoopVote ist eine private Basketball-Team-App mit:
 ## Inbetriebnahme
 
 1. Neues Supabase-Projekt anlegen.
-2. `supabase/schema.sql` im SQL Editor ausführen.
+2. `schema.sql` (im Hauptordner) im SQL Editor ausführen. **Nur in einem neuen, leeren Projekt – nie auf der Produktiv-Datenbank.** Spätere Änderungen liegen als Migrationen in `supabase/migrations/`.
 3. In Supabase Authentication E-Mail/Passwort aktivieren. Für ein geschlossenes privates Team kann E-Mail-Bestätigung deaktiviert werden; andernfalls bestätigen Spieler zuerst ihre E-Mail.
 4. Project URL und anon/public key in `config.js` eintragen.
 5. App deployen.
