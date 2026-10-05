@@ -741,3 +741,74 @@ button:disabled {
   width: 42px;
   height: 42px;
 }
+
+/* ---------- Ladeplatzhalter (werden ersetzt, sobald die Daten da sind) ---------- */
+.skeleton {
+  height: 48px;
+  margin-bottom: var(--space-2);
+  border-radius: var(--radius-md);
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+/* ---------- Dialoge (Rückfragen und Meldungen) ---------- */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--space-6);
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: fade var(--fast) var(--ease) both;
+}
+.dialog {
+  width: min(100%, 340px);
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--surface-2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  animation: pop var(--slow) var(--ease) both;
+}
+.dialog-text {
+  margin: 0 0 var(--space-5);
+  font-size: var(--text-md);
+  line-height: 1.45;
+  white-space: pre-line;
+}
+.dialog-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+.dialog-actions .btn {
+  flex: 1;
+}
+.dialog-actions .btn.secondary {
+  background: var(--fill-strong);
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+.skeleton-fill {
+  flex: 1;
+  margin-bottom: 0;
+}

@@ -1,7 +1,7 @@
 window.addEventListener('DOMContentLoaded', async () => {
   const p = await HoopVote.guard({ admin: true });
   HoopVote.wireSignOut();
-  const { sb, $, esc, avatarHtml } = HoopVote;
+  const { sb, $, esc, avatarHtml, ask, notify } = HoopVote;
   async function invite() {
     const { data, error } = await sb.rpc('admin_get_invite');
     if (error) throw error;
@@ -22,7 +22,21 @@ window.addEventListener('DOMContentLoaded', async () => {
           `<div class="admin-row">${avatarHtml(x.display_name, x.avatar_path, 'avatar-img-38')}<div><strong>${esc(x.display_name)}</strong><div class="muted small">Aktiver Spieler</div></div><label class="check"><input type="checkbox" class="attendee" value="${x.id}"> Anwesend</label></div>`,
       )
       .join('');
+    updateSelectAll();
   }
+  // «Alle anwesend» hakt alle Spieler an; sind schon alle angehakt, werden alle abgewählt.
+  function updateSelectAll() {
+    const boxes = [...document.querySelectorAll('.attendee')];
+    $('#selectAll').textContent =
+      boxes.length && boxes.every(b => b.checked) ? 'Alle abwählen' : 'Alle anwesend';
+  }
+  $('#selectAll').onclick = () => {
+    const boxes = [...document.querySelectorAll('.attendee')],
+      all = boxes.every(b => b.checked);
+    boxes.forEach(b => (b.checked = !all));
+    updateSelectAll();
+  };
+  $('#attendance').onchange = updateSelectAll;
   async function pending() {
     const { data } = await sb
       .from('profiles')
@@ -42,7 +56,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
   async function setProfile(id, ok) {
     const { error } = await sb.rpc('admin_set_profile_status', { p_profile_id: id, p_approve: ok });
-    if (error) return alert(error.message);
+    if (error) return notify(error.message);
     await Promise.all([pending(), players()]);
   }
   async function seasons() {
@@ -81,17 +95,18 @@ window.addEventListener('DOMContentLoaded', async () => {
         (b.onclick = async () => {
           const final = b.dataset.stage === 'final';
           if (
-            !confirm(
+            !(await ask(
               final
                 ? 'Saison endgültig abschliessen? Alle Abschlussratings müssen fertig sein.'
                 : 'Abschlussratings starten? Danach müssen alle Spieler erneut alle Mitspieler bewerten.',
-            )
+              { danger: final },
+            ))
           )
             return;
           const { error } = await sb.rpc('admin_close_season', { p_season_id: b.dataset.id });
-          if (error) return alert(error.message);
+          if (error) return notify(error.message);
           if (!final) {
-            alert(
+            await notify(
               'Abschlussratings sind jetzt geöffnet. Du wirst ebenfalls zuerst deine Ratings abschliessen müssen.',
             );
             location.href = 'ratings.html';
@@ -120,25 +135,28 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.cancelSession').forEach(
       b =>
         (b.onclick = async () => {
-          if (!confirm('Session abbrechen? Eingegangene Stimmen werden nicht gewertet.')) return;
+          if (
+            !(await ask('Session abbrechen? Eingegangene Stimmen werden nicht gewertet.', { danger: true }))
+          )
+            return;
           const { error } = await sb.rpc('admin_cancel_session', { p_session_id: b.dataset.id });
-          if (error) alert(error.message);
+          if (error) notify(error.message);
           else sessions();
         }),
     );
   }
   $('#copyInvite').onclick = () => navigator.clipboard.writeText($('#inviteLink').value);
   $('#rotateInvite').onclick = async () => {
-    if (!confirm('Der bisherige Einladungslink wird ungültig. Fortfahren?')) return;
+    if (!(await ask('Der bisherige Einladungslink wird ungültig. Fortfahren?', { danger: true }))) return;
     const { error } = await sb.rpc('admin_rotate_invite');
-    if (error) alert(error.message);
+    if (error) notify(error.message);
     else invite();
   };
   $('#createSeason').onclick = async () => {
     const name = $('#seasonName').value.trim();
     if (!name) return;
     const { error } = await sb.rpc('admin_create_season', { p_name: name });
-    if (error) alert(error.message);
+    if (error) notify(error.message);
     else {
       $('#seasonName').value = '';
       seasons();
@@ -147,13 +165,14 @@ window.addEventListener('DOMContentLoaded', async () => {
   $('#openSession').onclick = async () => {
     const title = $('#sessionTitle').value.trim(),
       ids = [...document.querySelectorAll('.attendee:checked')].map(x => x.value);
-    if (!title || ids.length < 4) return alert('Bitte Titel und mindestens vier anwesende Spieler wählen.');
+    if (!title || ids.length < 4) return notify('Bitte Titel und mindestens vier anwesende Spieler wählen.');
     const { error } = await sb.rpc('admin_create_session', { p_title: title, p_attendees: ids });
-    if (error) alert(error.message);
+    if (error) notify(error.message);
     else {
-      alert('Abstimmung eröffnet. Die 48 Stunden laufen ab jetzt.');
+      notify('Abstimmung eröffnet. Die 48 Stunden laufen ab jetzt.');
       $('#sessionTitle').value = '';
       document.querySelectorAll('.attendee').forEach(x => (x.checked = false));
+      updateSelectAll();
       sessions();
     }
   };

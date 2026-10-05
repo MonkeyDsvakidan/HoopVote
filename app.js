@@ -37,6 +37,23 @@ async function guard({admin=false, allowPending=false, skipRatings=false}={}){
   const name=$('[data-user-name]'); if(name) name.textContent=p.display_name;
   return p;
 }
+// Dialoge im App-Stil statt Browser-Fenster. ask() liefert true/false, notify() wartet auf «OK».
+function dialog(message,{ok='OK',cancel=null,danger=false}={}){
+  return new Promise(resolve=>{
+    const wrap=document.createElement('div'); wrap.className='dialog-backdrop';
+    wrap.innerHTML=`<div class="dialog" role="alertdialog" aria-modal="true"><p class="dialog-text"></p><div class="dialog-actions">${cancel?'<button type="button" class="btn secondary" data-r="0"></button>':''}<button type="button" class="btn ${danger?'danger':'primary'}" data-r="1"></button></div></div>`;
+    wrap.querySelector('.dialog-text').textContent=String(message);
+    wrap.querySelector('[data-r="1"]').textContent=ok;
+    if(cancel) wrap.querySelector('[data-r="0"]').textContent=cancel;
+    const key=e=>{ if(e.key==='Escape') done(!cancel); else if(e.key==='Enter'){ e.preventDefault(); done(true); } };
+    const done=v=>{ document.removeEventListener('keydown',key); wrap.remove(); resolve(v); };
+    wrap.onclick=e=>{ const b=e.target.closest('[data-r]'); if(b) done(b.dataset.r==='1'); else if(e.target===wrap && cancel) done(false); };
+    document.addEventListener('keydown',key);
+    document.body.appendChild(wrap); wrap.querySelector('[data-r="1"]').focus();
+  });
+}
+const ask=(message,{danger=false}={})=>dialog(message,{cancel:'Abbrechen',danger});
+const notify=message=>dialog(message);
 async function signOut(){ if(sb) await sb.auth.signOut(); location.href='index.html'; }
 function wireSignOut(){ $$('[data-signout]').forEach(b=>b.onclick=signOut); }
 // Verkleinert ein Foto im Browser (kürzere Seite max. 400 px) zu JPEG. null, wenn nicht möglich oder nicht kleiner.
@@ -62,4 +79,4 @@ async function uploadAvatar(file,userId){
   const {error}=await sb.storage.from('avatars').upload(path,small||file,{upsert:false,contentType:small?'image/jpeg':(file.type||'image/jpeg')});
   if(error) throw error; return path;
 }
-window.HoopVote={sb,configured,$,$$,esc,fmtDate,initials,avatarUrl,avatarInitials,avatarHtml,sessionUser,profile,guard,signOut,wireSignOut,uploadAvatar,showConfigError};
+window.HoopVote={sb,configured,$,$$,esc,fmtDate,initials,avatarUrl,avatarInitials,avatarHtml,ask,notify,sessionUser,profile,guard,signOut,wireSignOut,uploadAvatar,showConfigError};

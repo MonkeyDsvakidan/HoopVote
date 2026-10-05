@@ -17,7 +17,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     ratingPhase = 'start';
   async function load() {
     const seasonId = $('#seasonSelect').value;
-    if (!seasonId) return;
+    if (!seasonId) {
+      // Noch keine Saison: Ladeplatzhalter entfernen
+      ['#leaderboard', '#categories', '#skillRatings'].forEach(id => ($(id).innerHTML = ''));
+      $('#heroLeader').innerHTML = '<span class="muted">Noch keine Resultate.</span>';
+      return;
+    }
     const monthStart =
       scope === 'month'
         ? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
