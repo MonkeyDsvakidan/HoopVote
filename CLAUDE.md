@@ -28,7 +28,7 @@ Die App ist **produktiv im Einsatz**. In der Datenbank liegen Profile, Stimmen u
 ## Technik
 
 - **Supabase-Projekt:** `HoopVote`, ID `plwmedgjmuaquujmwpia`, Region eu-central-2, Postgres 17.
-- **Client:** `config.js` (URL + Publishable Key, darf öffentlich sein), `app.js` (gemeinsame Helfer, `guard()`), Seitenlogik inline in den HTML-Dateien.
+- **Client:** `config.js` (URL + Publishable Key, darf öffentlich sein), `app.js` (gemeinsame Helfer, `guard()`), Seitenlogik in `js/<seite>.js` (am Ende des `<body>`, ohne `defer`, damit die Reihenfolge wie früher beim Inline-Skript bleibt). Supabase-JS kommt per CDN (`cdn.jsdelivr.net`), im Claude-Container gesperrt: für Browser-Tests lokal per npm bereitstellen.
 - **Sicherheitsmodell:** RLS auf allen Tabellen, Client liest nur über RLS-Policies, **alle Schreibzugriffe über `SECURITY DEFINER`-RPCs** mit eigener Rechteprüfung und `search_path=public`. `ballot_receipts`, `anonymous_votes`, `skill_ratings` sind für Clients komplett gesperrt. Die Supabase-Advisor-Warnungen «authenticated can execute SECURITY DEFINER» sind deshalb erwartet.
 - **Profilbilder:** öffentlicher Bucket `avatars`, Pfad `<auth.uid()>/<uuid>.<jpg|jpeg|png|webp|heic|heif|gif>`, geprüft durch `is_valid_avatar_path()`. Bucket-Limit 10 MB, nur Bildformate. Im HTML immer `esc(avatarUrl(...))` verwenden.
 - **`schema.sql`** entspricht exakt der Live-DB (Stand nach Migration 02, per Fingerabdruck verglichen). Nach jeder Migration nachführen.
