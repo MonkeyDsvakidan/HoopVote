@@ -33,11 +33,27 @@ async function guard({admin=false, allowPending=false, skipRatings=false}={}){
 }
 async function signOut(){ if(sb) await sb.auth.signOut(); location.href='index.html'; }
 function wireSignOut(){ $$('[data-signout]').forEach(b=>b.onclick=signOut); }
+// Verkleinert ein Foto im Browser (kürzere Seite max. 400 px) zu JPEG. null, wenn nicht möglich oder nicht kleiner.
+async function shrinkImage(file,max=400){
+  const url=URL.createObjectURL(file);
+  try{
+    const img=new Image(); img.src=url; await img.decode();
+    const w0=img.naturalWidth,h0=img.naturalHeight; if(!w0||!h0) return null;
+    const s=Math.min(1,max/Math.min(w0,h0),(max*3)/Math.max(w0,h0));
+    const w=Math.max(1,Math.round(w0*s)),h=Math.max(1,Math.round(h0*s));
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,w,h); ctx.drawImage(img,0,0,w,h);
+    const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.85));
+    return blob && blob.type==='image/jpeg' && blob.size<file.size ? blob : null;
+  }catch{ return null; }
+  finally{ URL.revokeObjectURL(url); }
+}
 async function uploadAvatar(file,userId){
   if(!file) throw new Error('Profilfoto fehlt.');
-  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+  const small=await shrinkImage(file);
+  const ext=small?'jpg':(file.name.split('.').pop()||'jpg').toLowerCase();
   const path=`${userId}/${crypto.randomUUID()}.${ext}`;
-  const {error}=await sb.storage.from('avatars').upload(path,file,{upsert:false,contentType:file.type||'image/jpeg'});
+  const {error}=await sb.storage.from('avatars').upload(path,small||file,{upsert:false,contentType:small?'image/jpeg':(file.type||'image/jpeg')});
   if(error) throw error; return path;
 }
 window.HoopVote={sb,configured,$,$$,esc,fmtDate,initials,avatarUrl,sessionUser,profile,guard,signOut,wireSignOut,uploadAvatar,showConfigError};
