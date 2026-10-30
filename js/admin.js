@@ -119,17 +119,26 @@ window.addEventListener('DOMContentLoaded', async () => {
   const sessionStatus = { open: 'offen', closed: 'abgeschlossen', cancelled: 'abgebrochen' };
   async function sessions() {
     await sb.rpc('open_session_progress');
-    const { data } = await sb
-      .from('sessions')
-      .select('id,title,status,started_at,ends_at,closed_at')
-      .eq('team_id', p.team_id)
-      .order('started_at', { ascending: false })
-      .limit(20);
+    const [{ data }, { data: part }] = await Promise.all([
+      sb
+        .from('sessions')
+        .select('id,title,status,started_at,ends_at,closed_at')
+        .eq('team_id', p.team_id)
+        .order('started_at', { ascending: false })
+        .limit(20),
+      sb.rpc('session_participation'),
+    ]);
+    // Teilnahme pro Session: wie viele der anwesenden (stimmberechtigten) Spieler abgestimmt haben
+    const counts = Object.fromEntries((part || []).map(x => [x.session_id, x]));
+    const turnout = id => {
+      const c = counts[id];
+      return c ? `<div class="small turnout">${c.submitted_count}/${c.eligible_count} abgestimmt</div>` : '';
+    };
     $('#sessionList').innerHTML =
       (data || [])
         .map(
           s =>
-            `<div class="leader"><div><strong>${esc(s.title)}</strong><div class="muted small">${sessionStatus[s.status] || s.status} · Start ${HoopVote.fmtDate(s.started_at)} · Ende ${HoopVote.fmtDate(s.ends_at)}</div></div><div class="actions m-0">${s.status === 'open' ? `<button class="btn danger cancelSession" data-id="${s.id}">Abbrechen</button>` : ''}</div></div>`,
+            `<div class="leader"><div><strong>${esc(s.title)}</strong>${turnout(s.id)}<div class="muted small">${sessionStatus[s.status] || s.status} · Start ${HoopVote.fmtDate(s.started_at)} · Ende ${HoopVote.fmtDate(s.ends_at)}</div></div><div class="actions m-0">${s.status === 'open' ? `<button class="btn danger cancelSession" data-id="${s.id}">Abbrechen</button>` : ''}</div></div>`,
         )
         .join('') || '<p class="muted">Noch keine Sessions.</p>';
     document.querySelectorAll('.cancelSession').forEach(

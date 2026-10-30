@@ -15,6 +15,66 @@ window.addEventListener('DOMContentLoaded', async () => {
     .join('');
   let scope = 'month',
     ratingPhase = 'start';
+  const fmtDay = v => new Intl.DateTimeFormat('de-CH', { dateStyle: 'medium' }).format(new Date(v));
+  // Trainings der gewählten Saison, deren Resultate schon sichtbar sind (abgeschlossen oder abgelaufen)
+  async function loadSessions() {
+    const seasonId = $('#seasonSelect').value;
+    const { data } = seasonId
+      ? await sb
+          .from('sessions')
+          .select('id,title,status,started_at,ends_at')
+          .eq('team_id', p.team_id)
+          .eq('season_id', seasonId)
+          .order('started_at', { ascending: false })
+      : { data: [] };
+    const visible = (data || []).filter(
+      s => s.status === 'closed' || (s.status === 'open' && new Date(s.ends_at) <= new Date()),
+    );
+    $('#sessionSelect').innerHTML =
+      visible
+        .map(s => `<option value="${s.id}">${esc(s.title)} · ${fmtDay(s.started_at)}</option>`)
+        .join('') || '<option value="">Noch keine abgeschlossenen Trainings</option>';
+  }
+  // Resultate eines Trainings in dieselbe Form bringen wie leaderboard / category_leaderboard / stats_summary
+  async function sessionData(sessionId) {
+    if (!sessionId)
+      return {
+        rows: [],
+        cats: [],
+        summary: [{ session_count: 0, avg_participation: null, total_points: 0 }],
+      };
+    const [{ data: res, error }, { data: part }] = await Promise.all([
+      sb.rpc('session_results', { p_session_id: sessionId }),
+      sb.rpc('session_participation'),
+    ]);
+    if (error) return { error };
+    const byPlayer = {};
+    (res || []).forEach(x => {
+      const r = (byPlayer[x.profile_id] ||= { ...x, points: 0, first_places: 0 });
+      r.points += Number(x.points);
+      r.first_places += Number(x.first_places);
+    });
+    const rows = Object.values(byPlayer).sort(
+      (a, b) =>
+        b.points - a.points ||
+        b.first_places - a.first_places ||
+        a.display_name.localeCompare(b.display_name),
+    );
+    const c = (part || []).find(x => x.session_id === sessionId);
+    const total = rows.reduce((n, x) => n + x.points, 0);
+    return {
+      rows,
+      cats: res || [],
+      summary: [
+        {
+          session_count: rows.length ? 1 : 0,
+          avg_participation:
+            c && Number(c.eligible_count) ? (c.submitted_count / c.eligible_count) * 100 : null,
+          total_points: total,
+        },
+      ],
+    };
+  }
   async function load() {
     const seasonId = $('#seasonSelect').value;
     if (!seasonId) {
@@ -28,14 +88,19 @@ window.addEventListener('DOMContentLoaded', async () => {
         ? new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
         : null;
     const range = { p_season_id: seasonId, p_month_start: monthStart };
-    const [{ data: rows, error }, { data: cats }, { data: summary }, { data: skillRows }, { data: open }] =
-      await Promise.all([
-        sb.rpc('leaderboard', range),
-        sb.rpc('category_leaderboard', range),
-        sb.rpc('stats_summary', range),
-        sb.rpc('skill_rating_summary', { p_season_id: seasonId, p_phase: ratingPhase }),
-        sb.rpc('open_session_progress'),
-      ]);
+    const results =
+      scope === 'session'
+        ? sessionData($('#sessionSelect').value)
+        : Promise.all([
+            sb.rpc('leaderboard', range),
+            sb.rpc('category_leaderboard', range),
+            sb.rpc('stats_summary', range),
+          ]).then(([l, c, s]) => ({ error: l.error, rows: l.data, cats: c.data, summary: s.data }));
+    const [{ rows, cats, summary, error }, { data: skillRows }, { data: open }] = await Promise.all([
+      results,
+      sb.rpc('skill_rating_summary', { p_season_id: seasonId, p_phase: ratingPhase }),
+      sb.rpc('open_session_progress'),
+    ]);
     if (error) throw error;
     const sum = summary?.[0] || {};
     $('#statSessions').textContent = sum.session_count || 0;
@@ -43,7 +108,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       sum.avg_participation == null ? '–' : `${Math.round(sum.avg_participation)}%`;
     $('#statPlayers').textContent = rows?.length || 0;
     $('#statPoints').textContent = sum.total_points || 0;
-    $('#leaderLabel').textContent = scope === 'month' ? 'Monats-Leader' : 'Saison-Leader';
+    $('#leaderLabel').textContent =
+      scope === 'month' ? 'Monats-Leader' : scope === 'session' ? 'Training-Leader' : 'Saison-Leader';
     if (rows?.length) {
       const x = rows[0],
         av = avatarHtml(x.display_name, x.avatar_path, 'avatar-img-42');
@@ -97,20 +163,21 @@ window.addEventListener('DOMContentLoaded', async () => {
         `Offene Session: ${open[0].submitted_count}/${open[0].eligible_count} abgestimmt. Keine Zwischenstände sichtbar.`;
     } else $('#openNotice').style.display = 'none';
   }
-  // Aktiven Tab markieren, den anderen zurücksetzen, neu laden.
-  function switchTab(on, off) {
+  // Aktiven Tab markieren, die anderen zurücksetzen, neu laden.
+  function switchTab(on, ...off) {
     $(on).classList.add('active');
-    $(off).classList.remove('active');
+    off.forEach(o => $(o).classList.remove('active'));
     load();
   }
-  $('#monthTab').onclick = () => {
-    scope = 'month';
-    switchTab('#monthTab', '#seasonTab');
-  };
-  $('#seasonTab').onclick = () => {
-    scope = 'season';
-    switchTab('#seasonTab', '#monthTab');
-  };
+  function setScope(s) {
+    scope = s;
+    $('#sessionField').style.display = s === 'session' ? 'block' : 'none';
+    const tabs = { month: '#monthTab', season: '#seasonTab', session: '#sessionTab' };
+    switchTab(tabs[s], ...Object.values(tabs).filter(t => t !== tabs[s]));
+  }
+  $('#monthTab').onclick = () => setScope('month');
+  $('#seasonTab').onclick = () => setScope('season');
+  $('#sessionTab').onclick = () => setScope('session');
   $('#startRatingTab').onclick = () => {
     ratingPhase = 'start';
     switchTab('#startRatingTab', '#finalRatingTab');
@@ -119,6 +186,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     ratingPhase = 'final';
     switchTab('#finalRatingTab', '#startRatingTab');
   };
-  $('#seasonSelect').onchange = load;
+  $('#seasonSelect').onchange = async () => {
+    await loadSessions();
+    load();
+  };
+  $('#sessionSelect').onchange = load;
+  await loadSessions();
   load();
 });
