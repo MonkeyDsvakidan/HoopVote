@@ -910,3 +910,11 @@ button:disabled {
   flex: 1;
   margin-bottom: 0;
 }
+
+/* Teilnahme pro Abstimmung in der Verwaltung */
+.turnout {
+  margin: 2px 0;
+  color: var(--accent-text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}

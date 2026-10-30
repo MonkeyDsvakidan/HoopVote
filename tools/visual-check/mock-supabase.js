@@ -19,6 +19,8 @@ const rpcs={
  skill_rating_summary:players.map((x,i)=>({...x,rating_count:i<4?5:2,shooting:i<4?6.5:null,layups:i<4?7:null,ballhandling:i<4?5.5:null,passing:i<4?6:null,defense:i<4?7.5:null,rebounding:i<4?6:null,conditioning:i<4?8:null,basketball_iq:i<4?6.5:null,teamplay:i<4?7:null})),
  admin_get_invite:[{invite_token:'abc123'}],
  admin_rating_progress:[{phase:'start',submitted_count:20,required_count:30}],
+ session_participation:[{session_id:SESSION,eligible_count:6,submitted_count:2},{session_id:'x0',eligible_count:6,submitted_count:5}],
+ session_results:cats.flatMap((c,ci)=>players.slice(0,4).map((x,i)=>({category_id:c.id,category_name:c.name,profile_id:x.id,display_name:x.display_name,avatar_path:x.avatar_path,points:9-i*2-(ci===1&&i===0?4:0),first_places:i===0?2:i===1?1:0}))).sort((a,b)=>a.category_id.localeCompare(b.category_id)||b.points-a.points),
 };
 const tables={
  profiles:q=>q.eq.status==='pending'?[{id:'p9',display_name:'Neu',avatar_path:null,created_at:iso(now-36e5)}]:players,
