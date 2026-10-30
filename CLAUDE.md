@@ -34,7 +34,7 @@ Die App ist **produktiv im Einsatz**. In der Datenbank liegen Profile, Stimmen u
 - **Oberfläche:** Tab-Leiste `.nav.tabbar` (Handy unten fixiert mit Symbolen, ab 820 px Pillen oben; «Abmelden» auf dem Handy in den Einstellungen). Rückfragen/Meldungen nur über `HoopVote.ask()`/`notify()` (kein `alert`/`confirm`). Listen-Container starten mit `.skeleton`-Platzhaltern. Homescreen-App über `manifest.webmanifest` + `icons/`.
 - **Sicherheitsmodell:** RLS auf allen Tabellen, Client liest nur über RLS-Policies, **alle Schreibzugriffe über `SECURITY DEFINER`-RPCs** mit eigener Rechteprüfung und `search_path=public`. `ballot_receipts`, `anonymous_votes`, `skill_ratings` sind für Clients komplett gesperrt. Die Supabase-Advisor-Warnungen «authenticated can execute SECURITY DEFINER» sind deshalb erwartet.
 - **Profilbilder:** öffentlicher Bucket `avatars`, Pfad `<auth.uid()>/<uuid>.<jpg|jpeg|png|webp|heic|heif|gif>`, geprüft durch `is_valid_avatar_path()`. Bucket-Limit 10 MB, nur Bildformate. Im HTML immer `esc(avatarUrl(...))` verwenden.
-- **`schema.sql`** entspricht exakt der Live-DB (Stand nach Migration 03, per Fingerabdruck verglichen). Nach jeder Migration nachführen.
+- **`schema.sql`** entspricht exakt der Live-DB (Stand nach Migration 04, per Fingerabdruck verglichen). Nach jeder Migration nachführen.
 - **MusicBattle** ist ein eigenes Git- und Supabase-Projekt. Nicht anfassen. Die zwei versehentlich hier angelegten `mb_*`-Funktionen wurden mit Migration 02 entfernt.
 - **Migrationen über den Supabase-Zugang** (`apply_migration`) liefen in Claude-Sitzungen mehrfach in einen Timeout, ohne etwas zu ändern. Lesen funktioniert. Migrationen deshalb vom Nutzer im SQL Editor ausführen lassen und danach lesend prüfen.
 
@@ -49,6 +49,7 @@ Die App ist **produktiv im Einsatz**. In der Datenbank liegen Profile, Stimmen u
 - ✅ Profilbilder werden vor dem Upload verkleinert (PR #5, gemerged).
 - ✅ Code aufgeräumt (Roadmap 5): Seitenlogik in `js/<seite>.js`, statische Styles in `styles.css` (Zustände wie `display:none` bewusst inline), gemeinsame Avatar-Bausteine `avatarHtml()`/`avatarInitials()` in `app.js`, `guard()` und Statistik/Abstimmung laden parallel (Datenladezeit etwa halbiert). Jeweils mit nachgebildetem Supabase-Client pixelgleich verglichen.
 - ✅ Neues Design (dunkel, iOS-Stil, Blau) und Verbesserungen live: Profilbilder überall, Homescreen-App (Manifest + Icon), deutsche Session-Status, Podest-Farben, App-Dialoge, «Alle anwesend», Ladeplatzhalter, Auto-Weiter beim Abstimmen, Tab-Leiste unten (PRs #11–#14).
+- ✅ Migration 04 `20261030170000_session_results.sql` (30.10.2026) vom Nutzer ausgeführt und verifiziert: neue Lese-Funktionen `session_participation()` (stimmberechtigt/abgestimmt je Session, nur Zahlen) und `session_results(id)` (Punkte je Kategorie/Spieler für ein Training, gleiche Sichtbarkeit wie `leaderboard`). Zeilenzahlen unverändert. Backup davor beim Nutzer.
 - ✅ Migration `20261005130000_fix_rotate_invite_remove_mb.sql` vom Nutzer ausgeführt und verifiziert: «Einladungslink erneuern» repariert (`extensions.gen_random_bytes`), `mb_*`-Funktionen entfernt, Zeilenzahlen unverändert. Backup davor beim Nutzer.
 
 ## Roadmap (in dieser Reihenfolge)

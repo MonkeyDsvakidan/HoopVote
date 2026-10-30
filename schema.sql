@@ -8,8 +8,9 @@
 -- Diese Datei beschreibt den Stand der Live-Datenbank (Projekt «HoopVote»)
 -- vom 5. Oktober 2026, inklusive Migrationen
 -- supabase/migrations/20261005120000_avatar_security.sql,
--- supabase/migrations/20261005130000_fix_rotate_invite_remove_mb.sql und
--- supabase/migrations/20261005140000_join_team_name_rules.sql.
+-- supabase/migrations/20261005130000_fix_rotate_invite_remove_mb.sql,
+-- supabase/migrations/20261005140000_join_team_name_rules.sql und
+-- supabase/migrations/20261030170000_session_results.sql.
 -- Änderungen an der Live-Datenbank nur als neue Migration in
 -- supabase/migrations/ – und diese Datei danach nachführen.
 --
@@ -547,6 +548,40 @@ begin
     coalesce((select sum(v.points)::bigint from public.anonymous_votes v where v.session_id in(select id from ss)),0)::bigint from per;
 end$$;
 
+-- Teilnahme und Resultate pro einzelner Session (Migration 04)
+create or replace function public.session_participation()
+returns table(session_id uuid, eligible_count bigint, submitted_count bigint)
+language plpgsql stable security definer set search_path=public as $$
+declare v_team uuid:=public.my_team_id();
+begin
+  if not public.is_approved_member(v_team) then raise exception 'Keine Freigabe'; end if;
+  return query
+  select s.id,
+    (select count(*) from public.session_players sp where sp.session_id=s.id and sp.present and sp.can_vote),
+    (select count(*) from public.ballot_receipts br where br.session_id=s.id)
+  from public.sessions s
+  where s.team_id=v_team;
+end$$;
+
+create or replace function public.session_results(p_session_id uuid)
+returns table(category_id uuid, category_name text, profile_id uuid, display_name text, avatar_path text, points bigint, first_places bigint)
+language plpgsql stable security definer set search_path=public as $$
+declare v_team uuid:=public.my_team_id();
+begin
+  if not public.is_approved_member(v_team) then raise exception 'Keine Freigabe'; end if;
+  if not exists(select 1 from public.sessions where id=p_session_id and team_id=v_team) then raise exception 'Session nicht gefunden'; end if;
+  return query
+  select c.id,c.name,p.id,p.display_name,p.avatar_path,sum(v.points)::bigint,count(*) filter(where v.rank=1)::bigint
+  from public.anonymous_votes v
+  join public.sessions s on s.id=v.session_id
+  join public.categories c on c.id=v.category_id
+  join public.profiles p on p.id=v.candidate_profile_id
+  where s.id=p_session_id and s.team_id=v_team
+    and (s.status='closed' or (s.status='open' and s.ends_at<=now()))
+  group by c.id,c.name,c.sort_order,p.id,p.display_name,p.avatar_path
+  order by c.sort_order,sum(v.points) desc,p.display_name;
+end$$;
+
 -- ---------------------------------------------------------------------
 -- Skill-Ratings
 -- ---------------------------------------------------------------------
@@ -725,6 +760,8 @@ revoke all on function public.pending_rating_targets() from public, anon;
 revoke all on function public.submit_skill_rating(uuid,int,int,int,int,int,int,int,int,int) from public, anon;
 revoke all on function public.skill_rating_summary(uuid,text) from public, anon;
 revoke all on function public.admin_rating_progress(uuid) from public, anon;
+revoke all on function public.session_participation() from public, anon;
+revoke all on function public.session_results(uuid) from public, anon;
 
 grant execute on function public.my_profile_id() to authenticated;
 grant execute on function public.my_team_id() to authenticated;
@@ -755,6 +792,8 @@ grant execute on function public.pending_rating_targets() to authenticated;
 grant execute on function public.submit_skill_rating(uuid,int,int,int,int,int,int,int,int,int) to authenticated;
 grant execute on function public.skill_rating_summary(uuid,text) to authenticated;
 grant execute on function public.admin_rating_progress(uuid) to authenticated;
+grant execute on function public.session_participation() to authenticated;
+grant execute on function public.session_results(uuid) to authenticated;
 
 -- ---------------------------------------------------------------------
 -- Profilbilder (Storage)
