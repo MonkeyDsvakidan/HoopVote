@@ -52,6 +52,27 @@ function dialog(message,{ok='OK',cancel=null,danger=false}={}){
     document.body.appendChild(wrap); wrap.querySelector('[data-r="1"]').focus();
   });
 }
+// Fehlermeldungen von Supabase/Browser sind oft englisch und technisch. errText() macht daraus einen verständlichen deutschen Satz.
+// Meldungen unserer eigenen Datenbank-Funktionen sind schon deutsch und bleiben unverändert.
+function errText(err){
+  const raw=String(err&&typeof err==='object'?(err.message||''):(err||'')).trim();
+  const m=raw.toLowerCase();
+  if(!raw) return 'Etwas ist schiefgelaufen. Bitte versuche es nochmals.';
+  if(m.includes('failed to fetch')||m.includes('networkerror')||m.includes('load failed')||m.includes('network request failed')) return 'Keine Verbindung zum Server. Prüfe dein Internet und versuche es nochmals.';
+  if(m.includes('invalid login credentials')) return 'E-Mail oder Passwort stimmt nicht.';
+  if(m.includes('user already registered')||m.includes('already been registered')) return 'Für diese E-Mail gibt es schon ein Konto. Melde dich an.';
+  const pw=m.match(/password should be at least (\d+)/); if(pw) return `Das Passwort muss mindestens ${pw[1]} Zeichen lang sein.`;
+  if(m.includes('weak password')||m.includes('password is known to be weak')) return 'Dieses Passwort ist zu einfach. Bitte wähle ein anderes.';
+  if(m.includes('invalid format')||m.includes('invalid email')) return 'Die E-Mail-Adresse ist ungültig.';
+  if(m.includes('rate limit')||m.includes('for security purposes')||m.includes('too many requests')) return 'Zu viele Versuche. Bitte warte kurz und versuche es dann nochmals.';
+  if(m.includes('jwt expired')||m.includes('invalid jwt')||m.includes('refresh token')) return 'Deine Anmeldung ist abgelaufen. Bitte lade die Seite neu und melde dich an.';
+  if(m.includes('payload too large')||m.includes('exceeded the maximum allowed size')) return 'Die Datei ist zu gross (höchstens 10 MB).';
+  if(m.includes('mime type')||m.includes('invalid file type')) return 'Dieses Dateiformat geht nicht. Bitte wähle ein Foto (JPG, PNG, WEBP oder HEIC).';
+  if(m.includes('permission denied')||m.includes('row-level security')) return 'Dafür hast du keine Berechtigung.';
+  // Unbekannte englische Technik-Meldung: allgemein formulieren, Original klein dahinter. Sonst (deutsch) unverändert.
+  if(/\b(the|is|are|was|not|could|failed|invalid|error|unable|must|should|cannot|request|violates|duplicate|constraint|function|column|relation|does|null|value)\b/.test(m)) return `Etwas ist schiefgelaufen. Bitte versuche es nochmals. (Details: ${raw})`;
+  return raw;
+}
 const ask=(message,{danger=false}={})=>dialog(message,{cancel:'Abbrechen',danger});
 const notify=message=>dialog(message);
 async function signOut(){ if(sb) await sb.auth.signOut(); location.href='index.html'; }

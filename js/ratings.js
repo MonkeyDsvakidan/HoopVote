@@ -80,7 +80,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const { error } = await sb.rpc('submit_skill_rating', args);
     if (error) {
       btn.disabled = false;
-      $('#ratingMsg').textContent = error.message;
+      $('#ratingMsg').textContent = errText(error);
       return;
     }
     targets.shift();

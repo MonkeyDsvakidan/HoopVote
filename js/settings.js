@@ -25,7 +25,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       msg.textContent = 'Profil gespeichert.';
       setTimeout(() => location.reload(), 700);
     } catch (err) {
-      msg.textContent = err.message;
+      msg.textContent = errText(err);
     }
   };
   $('#passwordForm').onsubmit = async e => {
@@ -45,7 +45,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     msg.textContent = 'Passwort wird geändert…';
     const { error } = await sb.auth.updateUser({ password: a });
     if (error) {
-      msg.textContent = error.message;
+      msg.textContent = errText(error);
       return;
     }
     $('#passwordForm').reset();
