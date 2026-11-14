@@ -52,6 +52,34 @@ function dialog(message,{ok='OK',cancel=null,danger=false}={}){
     document.body.appendChild(wrap); wrap.querySelector('[data-r="1"]').focus();
   });
 }
+// Fehlermeldungen verständlich machen. Regeln (nicht nach Sprache raten, sondern nach Herkunft):
+// 1. Verbindungsfehler: Ausgang unklar (die Aktion kann gespeichert sein, nur die Antwort fehlt) → erst neu laden und prüfen, nicht blind wiederholen.
+// 2. Bekannte englische Meldungen von Supabase-Auth/Storage → feste deutsche Übersetzung.
+// 3. Eigene Datenbank-Meldungen (raise exception, Code P0001) und eigene App-Fehler (new Error) sind deutsch → unverändert.
+// 4. Alles andere → allgemeiner deutscher Satz, Original klein als «Details».
+const ERR_UNCLEAR='Die Verbindung zum Server ist abgebrochen. Vielleicht wurde trotzdem gespeichert. Lade die Seite neu und prüfe zuerst, ob es geklappt hat – erst dann nochmals versuchen.';
+const ERR_KNOWN=[
+  [/invalid login credentials/, 'E-Mail oder Passwort stimmt nicht.'],
+  [/user already registered|already been registered/, 'Für diese E-Mail gibt es schon ein Konto. Melde dich an.'],
+  [/password should be at least (\d+)/, m=>`Das Passwort muss mindestens ${m[1]} Zeichen lang sein.`],
+  [/weak password|password is known to be weak/, 'Dieses Passwort ist zu einfach. Bitte wähle ein anderes.'],
+  [/unable to validate email address|invalid format|invalid email/, 'Die E-Mail-Adresse ist ungültig.'],
+  [/rate limit|for security purposes|too many requests/, 'Zu viele Versuche. Bitte warte kurz und versuche es dann nochmals.'],
+  [/jwt expired|invalid jwt|refresh token/, 'Deine Anmeldung ist abgelaufen. Bitte lade die Seite neu und melde dich an.'],
+  [/payload too large|exceeded the maximum allowed size/, 'Die Datei ist zu gross (höchstens 10 MB).'],
+  [/mime type|invalid file type/, 'Dieses Dateiformat geht nicht. Bitte wähle ein Foto (JPG, PNG, WEBP oder HEIC).'],
+  [/permission denied|row-level security/, 'Dafür hast du keine Berechtigung.'],
+];
+function errText(err){
+  const raw=String(err&&typeof err==='object'?(err.message||''):(err||'')).trim();
+  const m=raw.toLowerCase();
+  if(!raw) return 'Etwas ist schiefgelaufen. Lade die Seite neu und prüfe, ob es geklappt hat.';
+  if(/failed to fetch|networkerror|load failed|network request failed|fetch failed/.test(m)) return ERR_UNCLEAR;
+  for(const [re,text] of ERR_KNOWN){ const hit=m.match(re); if(hit) return typeof text==='function'?text(hit):text; }
+  if(err&&err.code==='P0001') return raw; // eigene Meldung aus einer Datenbank-Funktion (deutsch)
+  if(err instanceof Error&&err.name==='Error'&&!err.code&&!err.status) return raw; // eigene Meldung aus dem App-Code (deutsch)
+  return `Etwas ist schiefgelaufen. Lade die Seite neu und prüfe, ob es geklappt hat. (Details: ${raw})`;
+}
 const ask=(message,{danger=false}={})=>dialog(message,{cancel:'Abbrechen',danger});
 const notify=message=>dialog(message);
 async function signOut(){ if(sb) await sb.auth.signOut(); location.href='index.html'; }

@@ -99,7 +99,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     $('#submitVote').disabled = true;
     const { error } = await sb.rpc('cast_ballot', { p_session_id: s.id, p_ballot: ballot });
     if (error) {
-      notify(error.message);
+      notify(errText(error));
       updateStatus();
       return;
     }

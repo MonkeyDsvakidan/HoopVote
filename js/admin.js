@@ -56,7 +56,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
   async function setProfile(id, ok) {
     const { error } = await sb.rpc('admin_set_profile_status', { p_profile_id: id, p_approve: ok });
-    if (error) return notify(error.message);
+    if (error) return notify(errText(error));
     await Promise.all([pending(), players()]);
   }
   async function seasons() {
@@ -104,7 +104,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           )
             return;
           const { error } = await sb.rpc('admin_close_season', { p_season_id: b.dataset.id });
-          if (error) return notify(error.message);
+          if (error) return notify(errText(error));
           if (!final) {
             await notify(
               'Abschlussratings sind jetzt geöffnet. Du wirst ebenfalls zuerst deine Ratings abschliessen müssen.',
@@ -149,7 +149,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           )
             return;
           const { error } = await sb.rpc('admin_cancel_session', { p_session_id: b.dataset.id });
-          if (error) notify(error.message);
+          if (error) notify(errText(error));
           else sessions();
         }),
     );
@@ -158,14 +158,14 @@ window.addEventListener('DOMContentLoaded', async () => {
   $('#rotateInvite').onclick = async () => {
     if (!(await ask('Der bisherige Einladungslink wird ungültig. Fortfahren?', { danger: true }))) return;
     const { error } = await sb.rpc('admin_rotate_invite');
-    if (error) notify(error.message);
+    if (error) notify(errText(error));
     else invite();
   };
   $('#createSeason').onclick = async () => {
     const name = $('#seasonName').value.trim();
     if (!name) return;
     const { error } = await sb.rpc('admin_create_season', { p_name: name });
-    if (error) notify(error.message);
+    if (error) notify(errText(error));
     else {
       $('#seasonName').value = '';
       seasons();
@@ -176,7 +176,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       ids = [...document.querySelectorAll('.attendee:checked')].map(x => x.value);
     if (!title || ids.length < 4) return notify('Bitte Titel und mindestens vier anwesende Spieler wählen.');
     const { error } = await sb.rpc('admin_create_session', { p_title: title, p_attendees: ids });
-    if (error) notify(error.message);
+    if (error) notify(errText(error));
     else {
       notify('Abstimmung eröffnet. Die 48 Stunden laufen ab jetzt.');
       $('#sessionTitle').value = '';

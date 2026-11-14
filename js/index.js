@@ -58,7 +58,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       email,
       options: { emailRedirectTo: redirectUrl },
     });
-    if (error) return ($('#verifyMsg').textContent = error.message);
+    if (error) return ($('#verifyMsg').textContent = errText(error));
     localStorage.setItem('hoopvote_pending_email', email);
     $('#verifyMsg').textContent = 'Neue Bestätigungs-Mail gesendet. Bitte verwende den neuesten Link.';
   });
@@ -80,7 +80,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           'Deine E-Mail ist noch nicht bestätigt. Du kannst dir hier eine neue Bestätigungs-Mail senden.';
         return;
       }
-      $('#authMsg').textContent = error.message;
+      $('#authMsg').textContent = errText(error);
       return;
     }
     localStorage.removeItem('hoopvote_pending_email');
@@ -95,7 +95,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       password: $('#signupPassword').value,
       options: { emailRedirectTo: redirectUrl },
     });
-    if (error) return ($('#authMsg').textContent = error.message);
+    if (error) return ($('#authMsg').textContent = errText(error));
     localStorage.setItem('hoopvote_pending_email', email);
     if (data.session) {
       localStorage.removeItem('hoopvote_pending_email');
@@ -123,7 +123,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       localStorage.removeItem('hoopvote_pending_email');
       location.href = 'index.html?pending=1';
     } catch (err) {
-      $('#joinMsg').textContent = err.message;
+      $('#joinMsg').textContent = errText(err);
     }
   });
   $('#bootstrapForm')?.addEventListener('submit', async e => {
@@ -141,7 +141,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (error) throw error;
       location.href = 'admin.html';
     } catch (err) {
-      $('#bootstrapMsg').textContent = err.message;
+      $('#bootstrapMsg').textContent = errText(err);
     }
   });
 });
