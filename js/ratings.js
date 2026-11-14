@@ -79,6 +79,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     skills.forEach(([key]) => (args[`p_${key}`] = Number($(`#${key}`).value)));
     const { error } = await sb.rpc('submit_skill_rating', args);
     if (error) {
+      // Kam nach einem Verbindungsabbruch die Antwort nicht an, ist die Bewertung evtl. schon gespeichert:
+      // dann ist «bereits bewertet» kein Fehler, sondern die Bestätigung → weiter zum nächsten Spieler.
+      if (error.code === 'P0001' && /bereits bewertet/.test(error.message || '')) {
+        $('#ratingMsg').textContent = 'Diese Bewertung war schon gespeichert.';
+        setTimeout(load, 350);
+        return;
+      }
       btn.disabled = false;
       $('#ratingMsg').textContent = errText(error);
       return;
