@@ -9,7 +9,7 @@ const fmtDate = v => new Intl.DateTimeFormat('de-CH',{dateStyle:'medium',timeSty
 const initials = n => (n||'?').split(/\s+/).slice(0,2).map(x=>x[0]||'').join('').toUpperCase();
 const avatarUrl = path => path ? `${cfg.supabaseUrl}/storage/v1/object/public/avatars/${String(path).split('/').map(encodeURIComponent).join('/')}` : '';
 // Runder Platzhalter mit Initialen bzw. Profilbild (imgClass = Grössenklasse, z. B. 'avatar-img-34').
-const avatarInitials = name => `<div class="avatar">${initials(name)}</div>`;
+const avatarInitials = name => `<div class="avatar">${esc(initials(name))}</div>`;
 const avatarHtml = (name, path, imgClass) => path ? `<img class="${imgClass}" src="${esc(avatarUrl(path))}" alt="">` : avatarInitials(name);
 
 function showConfigError(){
