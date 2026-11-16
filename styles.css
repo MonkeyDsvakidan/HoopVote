@@ -504,6 +504,14 @@ button:disabled {
   padding: var(--space-3) 0;
   border-bottom: 0.5px solid var(--separator);
 }
+/* Zeile mit Knopf: Knopf bricht als Ganzes in die nächste Zeile statt im Text */
+.leader.wrap {
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.leader.wrap .btn {
+  white-space: nowrap;
+}
 .leader:last-child {
   border-bottom: 0;
 }
