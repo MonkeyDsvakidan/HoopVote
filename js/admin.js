@@ -86,7 +86,7 @@ window.addEventListener('DOMContentLoaded', async () => {
           ? `<button class="btn secondary closeSeason" data-id="${s.id}" data-stage="${s.rating_stage}">${s.rating_stage === 'final' ? 'Saison definitiv abschliessen' : 'Abschlussratings starten'}</button>`
           : '';
       rows.push(
-        `<div class="leader"><div><strong>${esc(s.name)}</strong><div class="muted small">${status}${rating}</div></div><div class="actions m-0">${button}</div></div>`,
+        `<div class="leader wrap"><div><strong>${esc(s.name)}</strong><div class="muted small">${status}${rating}</div></div><div class="actions m-0">${button}</div></div>`,
       );
     }
     $('#seasonList').innerHTML = rows.join('') || '<p class="muted">Noch keine Saison angelegt.</p>';
