@@ -64,6 +64,11 @@ Die App ist **produktiv im Einsatz**. In der Datenbank liegen Profile, Stimmen u
 7. ❌ **Spieler deaktivieren.** Vom Nutzer als nicht nötig entschieden (5.10.2026). Klären, ob es nötig ist: Inaktive Spieler blockieren sonst den Saisonabschluss, weil alle Ratings vollständig sein müssen. Lösung als neuer Status (z. B. `inactive`) per additiver Migration.
 8. ❌ **Anonymität verstärken (optional).** Vom Nutzer als nicht nötig entschieden (5.10.2026). Zuordnung von Stimmen über Reihenfolge/Zeitstempel erschweren, nur für künftige Stimmen. Bestehende 120 Stimmen nicht anfassen.
 
+9. **Abstimmung auf dem Handy zuerst** (Vorschlag 22.11.2026, offen). Auf `vote.html` stehen vor der Rangliste zwei grosse Karten («Aktive Abstimmung» mit Erklärung, «Restzeit») – auf dem Handy muss man erst scrollen. Idee: kompakte Kopfzeile (Session · Restzeit · 2/6 abgestimmt in einer Zeile), Erklärung einklappbar, Rangliste direkt darunter. Nur Frontend, mit `tools/visual-check` vorher/nachher prüfen (390 px und 1280 px).
+10. **Restzeit lesbarer** (Vorschlag 22.11.2026, offen). «42:59:57» als «noch 1 Tag 19 Std.» (unter 1 Stunde: Minuten), Schlusszeit bleibt darunter.
+11. **Doppelte Teilnahme-Angabe entfernen** (Vorschlag 22.11.2026, offen). «2/6 abgestimmt» steht bei der Restzeit und nochmals in der Karte «Teilnahme / Aktuelle Session» – eine Stelle reicht (Hinweis «Ergebnisse erst, wenn alle abgestimmt haben …» behalten).
+12. **Statistik-Seite kürzer** (Vorschlag 22.11.2026, offen). `stats.html` ist auf dem Handy ca. 3'500 px lang, weil die Skill-Ratings aller Spieler offen sind. Idee: pro Spieler einklappbar (eigener Spieler zuerst und offen) oder Auswahl per Spieler-Chips.
+
 ## Allgemeine Regeln (zusätzlich)
 
 Zusätzlich zu dieser Datei gelten die Skills aus Aladins Konto: **webseiten-check** (hier Teil A Design und Teil C Sicherheit – privates Projekt), beim Programmieren **ponytail**, bei Design-Arbeiten **unslop** (unter `.claude/skills/`, falls vorhanden). Bei einem Widerspruch geht diese Datei vor. Ist unklar, welche Regel gilt, zuerst bei Aladin nachfragen.
