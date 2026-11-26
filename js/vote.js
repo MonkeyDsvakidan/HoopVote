@@ -103,16 +103,23 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     location.reload();
   };
+  // «noch 1 Tag 19 Std.», «noch 5 Std. 12 Min.», «noch 42 Min.» statt 42:59:57 (Roadmap 10)
+  function timeLeftText(sec) {
+    const d = Math.floor(sec / 86400),
+      h = Math.floor((sec % 86400) / 3600),
+      m = Math.floor((sec % 3600) / 60);
+    if (d > 0) return `noch ${d} ${d === 1 ? 'Tag' : 'Tage'}${h ? ` ${h} Std.` : ''}`;
+    if (h > 0) return `noch ${h} Std.${m ? ` ${m} Min.` : ''}`;
+    if (m > 0) return `noch ${m} Min.`;
+    return sec > 0 ? 'noch unter 1 Min.' : 'abgelaufen';
+  }
   function tick() {
     const now = Date.now(),
       end = new Date(s.ends_at).getTime(),
       start = new Date(s.started_at).getTime(),
       left = Math.max(0, Math.floor((end - now) / 1000)),
       dur = Math.max(1, Math.floor((end - start) / 1000));
-    const h = String(Math.floor(left / 3600)).padStart(2, '0'),
-      m = String(Math.floor((left % 3600) / 60)).padStart(2, '0'),
-      sec = String(left % 60).padStart(2, '0');
-    $('#countdown').textContent = `${h}:${m}:${sec}`;
+    $('#countdown').textContent = timeLeftText(left);
     $('#bar').style.width = `${Math.max(0, Math.min(100, (left / dur) * 100))}%`;
     if (left <= 0) location.reload();
   }
