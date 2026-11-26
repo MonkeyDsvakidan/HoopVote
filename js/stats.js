@@ -145,8 +145,11 @@ window.addEventListener('DOMContentLoaded', async () => {
       ['basketball_iq', 'Basketball-IQ'],
       ['teamplay', 'Teamplay'],
     ];
+    // Pro Spieler einklappbar (Roadmap 12): eigener Spieler zuerst und offen, die anderen zu
+    const mine = x => x.profile_id === p.profile_id;
     $('#skillRatings').innerHTML =
-      (skillRows || [])
+      [...(skillRows || [])]
+        .sort((a, b) => mine(b) - mine(a))
         .map(x => {
           const enough = Number(x.rating_count) >= 3;
           const skills = enough
@@ -154,7 +157,7 @@ window.addEventListener('DOMContentLoaded', async () => {
                 .map(([k, l]) => `<div class="skill-chip"><span>${l}</span><b>${x[k] ?? '–'}</b></div>`)
                 .join('')
             : `<div class="notice mt-8">Noch nicht sichtbar – mindestens 3 Bewertungen erforderlich (${x.rating_count}/3).</div>`;
-          return `<div class="player-rating-card"><div class="player-head compact">${avatarHtml(x.display_name, x.avatar_path, 'avatar-img-38')}<div><strong>${esc(x.display_name)}</strong><div class="muted small">${x.rating_count} Bewertungen</div></div></div><div class="skill-chips">${skills}</div></div>`;
+          return `<details class="player-rating-card"${mine(x) ? ' open' : ''}><summary class="player-head compact">${avatarHtml(x.display_name, x.avatar_path, 'avatar-img-38')}<div><strong>${esc(x.display_name)}${mine(x) ? ' <span class="muted small">(du)</span>' : ''}</strong><div class="muted small">${x.rating_count} Bewertungen</div></div><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></summary><div class="skill-chips">${skills}</div></details>`;
         })
         .join('') || '<p class="muted">Noch keine Ratings vorhanden.</p>';
     if (open?.length) {
