@@ -377,6 +377,43 @@ button:disabled {
 }
 
 /* ---------- Abstimmung: Countdown, Fortschritt, Kennzahlen ---------- */
+.vote-head h1 {
+  margin: var(--space-1) 0 var(--space-3);
+}
+.vote-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.vote-time {
+  font-size: var(--text-lg);
+}
+.vote-time b {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.vote-head #deadline {
+  margin: var(--space-2) 0 0;
+}
+.vote-how {
+  margin-top: var(--space-3);
+  border-top: 1px solid var(--separator);
+  padding-top: var(--space-3);
+}
+.vote-how summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--accent-text);
+  font-size: var(--text-md);
+}
+.vote-how p {
+  margin: 0 0 var(--space-2);
+}
 .countdown {
   margin: var(--space-2) 0;
   font-size: 44px;
