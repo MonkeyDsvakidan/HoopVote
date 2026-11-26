@@ -12,8 +12,6 @@ window.addEventListener('DOMContentLoaded', async () => {
   $('#session').style.display = 'block';
   $('#sessionTitle').textContent = s.title;
   $('#deadline').textContent = `Schliesst spätestens am ${HoopVote.fmtDate(s.ends_at)}`;
-  $('#eligibleCount').textContent = s.eligible_count;
-  $('#submittedCount').textContent = s.submitted_count;
   $('#progressPill').textContent = `${s.submitted_count}/${s.eligible_count} abgestimmt`;
   if (s.has_submitted) {
     $('#receiptNotice').textContent = 'Du hast für diese Session bereits abgestimmt.';
